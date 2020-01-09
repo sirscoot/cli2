@@ -2,6 +2,7 @@ import argparse
 import datetime
 import sqlite3 as db
 import time
+import csv
 
 conn = db.connect('transactions-2010.db')
 c = conn.cursor()
@@ -29,8 +30,9 @@ def get_transaction_by_date(date):
     conn.close()
     return output
 
-def write_to_csv(args):
+def write_to_csv(write):
     c.execute(r"SELECT * from transactions")
+    csvWriter = csv.writer(open('transactions.csv', 'w'))
     output = c.fetchmany(15)
     conn.close()
     return output
@@ -47,7 +49,7 @@ def main():
 
     parser.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
-    parser.add_argument("-w", "--write", action="store_true", help="Write data to csv file")
+    parser.add_argument("-w", "--write", type=str, action="store_true", help="Write data to csv file")
 
     args = parser.parse_args()
 
@@ -60,9 +62,7 @@ def main():
     if args.date:
         print(get_transaction_by_date(args.date))
     if args.write:
-        f = open("transactions.csv", "a")
-        f.write(str(write_to_csv(args)))
-        print("Data saved")
+        print(write_to_csv(args.write))
 
 
 
