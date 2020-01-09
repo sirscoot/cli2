@@ -32,9 +32,11 @@ def get_transaction_by_date(date):
 
 def write_to_csv(write):
     c.execute(r"SELECT * from transactions")
-    csvWriter = csv.writer(open('transactions.csv', 'w'))
-    output = c.fetchmany(15)
-    conn.close()
+    with open('transaction.csv', 'w') as csvfil:
+        csvWriter = csv.writer('transactions.csv', quotechar='|')
+        csvWriter.writerow(['transactions'])
+        output = c.fetchmany(15)
+        conn.close()
     return output
 
 def main():
@@ -49,7 +51,7 @@ def main():
 
     parser.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
-    parser.add_argument("-w", "--write", type=str, action="store_true", help="Write data to csv file")
+    parser.add_argument("-w", "--write", action="store_true", help="Write data to csv file")
 
     args = parser.parse_args()
 
