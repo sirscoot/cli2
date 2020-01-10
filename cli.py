@@ -27,7 +27,7 @@ def get_transaction_by_date(c, date):
 
 #writes data to csv file
 def write_to_csv(rows, output):
-    with open('results.csv', 'w', newline='') as csvfile:
+    with open(output, 'w', newline='') as csvfile:
         csvWriter = csv.writer(csvfile)
         csvWriter.writerow(['Transactions:'])
         csvWriter.writerows(rows)
@@ -52,7 +52,7 @@ def main():
 
     parser.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
-    parser.add_argument("-o", "--output", type=str, help="Changes the default file name to desired file name")
+    parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
 
 
     args = parser.parse_args()
