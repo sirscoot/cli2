@@ -24,18 +24,18 @@ def get_transaction_by_date(c, date):
     c.execute(r"SELECT * FROM transactions WHERE order_date=?", [date])
     return c.fetchall()
     
+    
+
+def write_to_csv(c):
+    with open('results.csv', 'w', newline='') as csvfile:
+        csvWriter = csv.writer(csvfile)
+        csvWriter.writerow(['Transactions:'])
 
 
 
 def main():
     conn = db.connect('transactions-2010.db')
     c = conn.cursor()
-
-    def write_to_csv(c):
-        with open('results.csv', 'w', newline='') as csvfile:
-            csvWriter = csv.writer(csvfile)
-            csvWriter.writerow(['Transactions:'])
-            return c.fetchall()
 
 
     #create the parser argument
@@ -61,7 +61,7 @@ def main():
     if args.date:
         get_transaction_by_date(c, args.date)
         
-
+    write_to_csv(c)
     conn.close()
 
 
