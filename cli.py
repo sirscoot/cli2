@@ -24,12 +24,15 @@ def get_transaction_by_date(c, date):
     c.execute(r"SELECT * FROM transactions WHERE order_date=?", [date])
     return c.fetchall()
     
-    
 
-def write_to_csv(c):
+#writes data to csv file
+def write_to_csv(rows, output):
     with open('results.csv', 'w', newline='') as csvfile:
         csvWriter = csv.writer(csvfile)
         csvWriter.writerow(['Transactions:'])
+        csvWriter.writerows(rows)
+
+
 
 
 
@@ -49,19 +52,21 @@ def main():
 
     parser.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
+    parser.add_argument("-o", "--output", type=str, help="Changes the default file name to desired file name")
+
 
     args = parser.parse_args()
 
 
-
+    output_data = None
     if args.name:
-        get_transactions_by_name(c, args.name)
+        output_data = get_transactions_by_name(c, args.name)
     if args.id:
-        get_transaction_by_customer_id(c, args.id)
+        output_data = get_transaction_by_customer_id(c, args.id)
     if args.date:
-        get_transaction_by_date(c, args.date)
+        output_data = get_transaction_by_date(c, args.date)
         
-    write_to_csv(c)
+    write_to_csv(output_data, args.output)
     conn.close()
 
 
