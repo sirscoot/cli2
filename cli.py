@@ -6,27 +6,27 @@ import csv
 
 
 #filters all transactions based on customer id
-def get_transaction_by_customer_id(c, id):
+def get_transaction_by_customer_id(c, id, conn):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)", [id])
     return c.fetchall()
     
 
 
 #shows all transactions filtered by customer name
-def get_transactions_by_name(c, name):
+def get_transactions_by_name(c, name, conn):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=?", [name])
     return c.fetchall()
     
 
 
 #shows all transactions filted by date
-def get_transaction_by_date(c, date):
+def get_transaction_by_date(c, date, conn):
     c.execute(r"SELECT * FROM transactions WHERE order_date=?", [date])
     return c.fetchall()
     
 
 #writes data to csv file
-def write_to_csv(rows, output):
+def write_to_csv(rows, output, conn):
     with open(output, 'w', newline='') as csvfile:
         csvWriter = csv.writer(csvfile)
         csvWriter.writerow(['Transactions:'])
@@ -37,22 +37,25 @@ def write_to_csv(rows, output):
 
 
 def main():
-    conn = db.connect('transactions-2010.db')
+    database = ""
+    conn = db.connect(database)
     c = conn.cursor()
 
 
     #create the parser argument
     parser = argparse.ArgumentParser(description="Transaction manager")
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
 
 
     group.add_argument("-n", "--name", type=str, help="Filters transactions based on date")
 
     group.add_argument("-i", "--id", type=int, help="Filters transactions based customer id")
 
-    parser.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
+    group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
     parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
+
+    parser.add_argument("-f", "--filename", type=str, help="Opens selected database file")
 
 
     args = parser.parse_args()
@@ -60,13 +63,13 @@ def main():
 
     output_data = None
     if args.name:
-        output_data = get_transactions_by_name(c, args.name)
+        output_data = get_transactions_by_name(c, args.name, conn)
     if args.id:
-        output_data = get_transaction_by_customer_id(c, args.id)
+        output_data = get_transaction_by_customer_id(c, args.id, conn)
     if args.date:
-        output_data = get_transaction_by_date(c, args.date)
+        output_data = get_transaction_by_date(c, args.date, conn)
         
-    write_to_csv(output_data, args.output)
+    write_to_csv(output_data, args.output, conn)
     conn.close()
 
 
