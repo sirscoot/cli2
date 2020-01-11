@@ -37,10 +37,6 @@ def write_to_csv(rows, output):
 
 
 def main():
-    database = ""
-    conn = db.connect(database)
-    c = conn.cursor()
-
 
     #create the parser argument
     parser = argparse.ArgumentParser(description="Transaction manager")
@@ -60,6 +56,8 @@ def main():
 
     args = parser.parse_args()
 
+    conn = db.connect(args.filename)
+    c = conn.cursor()
 
     output_data = None
     if args.name:
@@ -69,7 +67,7 @@ def main():
     if args.date:
         output_data = get_transaction_by_date(c, args.date)
         
-    
+
     write_to_csv(output_data, args.output)
     conn.close()
 
