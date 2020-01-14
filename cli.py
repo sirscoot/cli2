@@ -30,8 +30,8 @@ def write_to_csv(rows, output):
     with open(output, 'w', newline='') as csvfile:
         csvWriter = csv.writer(csvfile)
         csvWriter.writerow(['Transaction Id', 'Transaction Date', 'Transaction Price', 'Customer Name'])
-        csvWriter.writerows(rows)
-
+        for row in rows:
+            csvWriter.writerow(list(row))
 
 
 
