@@ -1,7 +1,6 @@
 import argparse
 import datetime
 import sqlite3 as db
-import time
 import csv
 
 
@@ -21,9 +20,20 @@ def get_transactions_by_name(c, name):
 
 #shows all transactions filted by date
 def get_transaction_by_date(c, date):
-    c.execute(r"SELECT * FROM transactions WHERE order_date=?", [date])
+    c.execute(r"SELECT * FROM transactions WHERE order_date=DATE(?)", [date])
     return c.fetchall()
-    
+
+#gives a range of order dates
+def get_range_of_transactions(c, dateRange):
+    c.execute(r"SELECT * FROM transactions WHERE order_date BETWEEN DATE(?) AND DATE(?)", [dateOne, dateTwo])
+    set_dates = f"{dateOne},{dateTwo}"
+    dateRange = set_dates.split(",")
+
+
+    return c.fetchall()
+
+
+
 
 #writes data to csv file
 def write_to_csv(rows, output):
@@ -31,7 +41,13 @@ def write_to_csv(rows, output):
         csvWriter = csv.writer(csvfile)
         csvWriter.writerow(['Transaction Id', 'Transaction Date', 'Transaction Price', 'Customer Name'])
         for row in rows:
-            csvWriter.writerow(list(row))
+            row_list = list(row)
+            price_slice = str(row_list[2])
+            priceSliceOne = price_slice[:-2]
+            priceSliceTwo = price_slice[-2:]
+            whole_price = f'{priceSliceOne}.{priceSliceTwo}'
+            row_list[2] = whole_price
+            csvWriter.writerow(row_list)
 
 
 
@@ -48,6 +64,8 @@ def main():
     group.add_argument("-i", "--id", type=int, help="Filters transactions based customer id")
 
     group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
+
+    group.add_argument("-r", "--range", type=str, help="Querys a range of transactions based off of order date")
 
     parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
 
@@ -66,6 +84,8 @@ def main():
         output_data = get_transaction_by_customer_id(c, args.id)
     if args.date:
         output_data = get_transaction_by_date(c, args.date)
+    if args.range:
+        output_data = get_range_of_transactions(c, args.range)
         
 
     write_to_csv(output_data, args.output)
