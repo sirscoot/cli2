@@ -25,11 +25,8 @@ def get_transaction_by_date(c, date):
 
 #gives a range of order dates
 def get_range_of_transactions(c, dateRange):
-    c.execute(r"SELECT * FROM transactions WHERE order_date BETWEEN DATE(?) AND DATE(?)", [dateOne, dateTwo])
-    set_dates = f"{dateOne},{dateTwo}"
-    dateRange = set_dates.split(",")
-
-
+    split_date = dateRange.split(",")
+    c.execute(r"SELECT * FROM transactions WHERE order_date BETWEEN DATE(?) AND DATE(?)", [split_date[0], split_date[1]])
     return c.fetchall()
 
 
