@@ -8,14 +8,14 @@ import csv
 def get_transaction_by_customer_id(c, id):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)", [id])
     return c.fetchall()
-    
+
 
 
 #shows all transactions filtered by customer name
 def get_transactions_by_name(c, name):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=?", [name])
     return c.fetchall()
-    
+
 
 
 #shows all transactions filted by date
@@ -62,7 +62,7 @@ def main():
 
     group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
-    group.add_argument("-r", "--range", type=str, help="Querys a range of transactions based off of order date")
+    parser.add_argument("-r", "--daterange", type=str, help="Querys a range of transactions based off of order date")
 
     parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
 
@@ -81,7 +81,7 @@ def main():
         output_data = get_transaction_by_customer_id(c, args.id)
     if args.date:
         output_data = get_transaction_by_date(c, args.date)
-    if args.range:
+    if args.daterange:
         output_data = get_range_of_transactions(c, args.range)
         
 
