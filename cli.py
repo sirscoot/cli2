@@ -4,26 +4,26 @@ import sqlite3 as db
 import csv
 
 
-#filters all transactions based on customer id
+# filters all transactions based on customer id
 def get_transaction_by_customer_id(c, id):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)", [id])
     return c.fetchall()
 
 
 
-#shows all transactions filtered by customer name
+# shows all transactions filtered by customer name
 def get_transactions_by_name(c, name):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=?", [name])
     return c.fetchall()
 
 
 
-#shows all transactions filted by date
+# shows all transactions filted by date
 def get_transaction_by_date(c, date):
     c.execute(r"SELECT * FROM transactions WHERE order_date=DATE(?)", [date])
     return c.fetchall()
 
-#gives a range of order dates
+# gives a range of order dates
 def get_range_of_transactions(c, dateRange):
     split_date = dateRange.split(",")
     c.execute(r"SELECT * FROM transactions WHERE order_date BETWEEN DATE(?) AND DATE(?)", [split_date[0], split_date[1]])
@@ -32,7 +32,7 @@ def get_range_of_transactions(c, dateRange):
 
 
 
-#writes data to csv file
+# writes data to csv file
 def write_to_csv(rows, output):
     with open(output, 'w', newline='') as csvfile:
         csvWriter = csv.writer(csvfile)
@@ -51,22 +51,24 @@ def write_to_csv(rows, output):
 
 def main():
 
-    #create the parser argument
+    # create the parser argument
     parser = argparse.ArgumentParser(description="Transaction manager")
     group = parser.add_mutually_exclusive_group(required=True)
+    req_group = parser.add_mutually_exclusive_group(required=False)
 
 
+    # parser argument
     group.add_argument("-n", "--name", type=str, help="Filters transactions based on date")
 
     group.add_argument("-i", "--id", type=int, help="Filters transactions based customer id")
 
-    group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
+    req_group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
-    parser.add_argument("-r", "--daterange", type=str, help="Querys a range of transactions based off of order date")
+    req_group.add_argument("-r", "--daterange", type=str, help="Querys a range of transactions based off of order date")
 
     parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
 
-    parser.add_argument("-f", "--filename", type=str, help="Opens selected database file")
+    parser.add_argument("-f", "--filename", type=str, help="Opens selected database file", required=True)
 
 
     args = parser.parse_args()
@@ -82,7 +84,7 @@ def main():
     if args.date:
         output_data = get_transaction_by_date(c, args.date)
     if args.daterange:
-        output_data = get_range_of_transactions(c, args.range)
+        output_data = get_range_of_transactions(c, args.daterange)
         
 
     write_to_csv(output_data, args.output)
