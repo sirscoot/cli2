@@ -1,71 +1,94 @@
 import argparse
 import datetime
 import sqlite3 as db
-import time
 import csv
 
-conn = db.connect('transactions-2010.db')
-c = conn.cursor()
 
-
-#filters all transactions based on customer id
-def get_transaction_by_customer_id(id):
+# filters all transactions based on customer id
+def get_transaction_by_customer_id(c, id):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)", [id])
-    output = c.fetchmany(15)
-    conn.close()
-    return output
-    
+    return c.fetchall()
 
-#shows all transactions filtered by customer name
-def get_transactions_by_name(name):
+
+
+# shows all transactions filtered by customer name
+def get_transactions_by_name(c, name):
     c.execute(r"SELECT * FROM transactions WHERE customer_name=?", [name])
-    output = c.fetchmany(15)
-    conn.close()
-    return output
+    return c.fetchall()
 
-#shows all transactions filted by date
-def get_transaction_by_date(date):
-    c.execute(r"SELECT * from transactions WHERE order_date=?", [date])
-    output = c.fetchmany(15)
-    conn.close()
-    return output
 
-def write_to_csv(write):
-    c.execute(r"SELECT * from transactions")
-    with open('transaction.csv', 'w') as csvfil:
-        csvWriter = csv.writer('transactions.csv', quotechar='|')
-        csvWriter.writerow(['transactions'])
-        output = c.fetchmany(15)
-        conn.close()
-    return output
+
+# shows all transactions filted by date
+def get_transaction_by_date(c, date):
+    c.execute(r"SELECT * FROM transactions WHERE order_date=DATE(?)", [date])
+    return c.fetchall()
+
+# gives a range of order dates
+def get_range_of_transactions(c, dateRange):
+    split_date = dateRange.split(",")
+    c.execute(r"SELECT * FROM transactions WHERE order_date BETWEEN DATE(?) AND DATE(?)", [split_date[0], split_date[1]])
+    return c.fetchall()
+
+
+
+
+# writes data to csv file
+def write_to_csv(rows, output):
+    with open(output, 'w', newline='') as csvfile:
+        csvWriter = csv.writer(csvfile)
+        csvWriter.writerow(['Transaction Id', 'Transaction Date', 'Transaction Price', 'Customer Name'])
+        for row in rows:
+            row_list = list(row)
+            price_slice = str(row_list[2])
+            priceSliceOne = price_slice[:-2]
+            priceSliceTwo = price_slice[-2:]
+            whole_price = f'{priceSliceOne}.{priceSliceTwo}'
+            row_list[2] = whole_price
+            csvWriter.writerow(row_list)
+
+
+
 
 def main():
-    #create the parser argument
+
+    # create the parser argument
     parser = argparse.ArgumentParser(description="Transaction manager")
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
+    req_group = parser.add_mutually_exclusive_group(required=False)
 
 
+    # parser argument
     group.add_argument("-n", "--name", type=str, help="Filters transactions based on date")
 
     group.add_argument("-i", "--id", type=int, help="Filters transactions based customer id")
 
-    parser.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
+    req_group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
 
-    parser.add_argument("-w", "--write", action="store_true", help="Write data to csv file")
+    req_group.add_argument("-r", "--daterange", type=str, help="Querys a range of transactions based off of order date")
+
+    parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
+
+    parser.add_argument("-f", "--filename", type=str, help="Opens selected database file", required=True)
+
 
     args = parser.parse_args()
 
+    conn = db.connect(args.filename)
+    c = conn.cursor()
 
-
+    output_data = None
     if args.name:
-        print(get_transactions_by_name(args.name))
+        output_data = get_transactions_by_name(c, args.name)
     if args.id:
-        print(get_transaction_by_customer_id(args.id))
+        output_data = get_transaction_by_customer_id(c, args.id)
     if args.date:
-        print(get_transaction_by_date(args.date))
-    if args.write:
-        print(write_to_csv(args.write))
+        output_data = get_transaction_by_date(c, args.date)
+    if args.daterange:
+        output_data = get_range_of_transactions(c, args.daterange)
+        
 
+    write_to_csv(output_data, args.output)
+    conn.close()
 
 
 if __name__ == "__main__":
