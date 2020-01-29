@@ -24,12 +24,23 @@ def get_transaction_by_date(c, date):
     return c.fetchall()
 
 # gives a range of order dates
-def get_range_of_transactions(c, dateRange, customer_info):
+def get_range_of_transactions(c, dateRange, customer_name=None, customer_id=None):
     split_date = dateRange.split(",")
-    c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?) OR customer_name=? AND order_date BETWEEN DATE(?) AND DATE(?)", [customer_info, customer_info, split_date[0], split_date[1]])
+
+    query_where = 'order_date BETWEEN DATE(?) AND DATE(?)'
+    query_args = [split_date[0], split_date[1]]
+
+    if customer_name is not None:
+        query_where = f'{query_where} AND customer_name=?'
+        query_args.append(customer_name)
+
+    if customer_id is not None:
+        query_where = f'{query_where} AND customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)'
+        query_args.append(customer_id)
+
+    query_string = f"SELECT * FROM transactions WHERE {query_where}"
+    c.execute(query_string, query_args)
     return c.fetchall()
-
-
 
 
 # writes data to csv file
@@ -50,8 +61,8 @@ def main():
 
     # create the parser argument
     parser = argparse.ArgumentParser(description="Transaction manager")
-    group = parser.add_mutually_exclusive_group(required=True)
-    req_group = parser.add_mutually_exclusive_group(required=False)
+    group = parser.add_mutually_exclusive_group()
+    req_group = parser.add_mutually_exclusive_group()
 
 
     # parser argument
@@ -78,9 +89,11 @@ def main():
     if args.date:
         output_data = get_transaction_by_date(c, args.date)
     if args.daterange and args.name:
-        output_data = get_range_of_transactions(c, args.daterange, args.name)
+        output_data = get_range_of_transactions(c, args.daterange, customer_name=args.name)
     if args.daterange and args.id:
-        output_data = get_range_of_transactions(c, args.daterange, args.id)
+        output_data = get_range_of_transactions(c, args.daterange, customer_id=args.id)
+    if args.daterange and not args.id and not args.name:
+        output_data = get_range_of_transactions(c, args.daterange)
 
     write_to_csv(output_data, args.output)
     conn.close()
