@@ -24,9 +24,9 @@ def get_transaction_by_date(c, date):
     return c.fetchall()
 
 # gives a range of order dates
-def get_range_of_transactions(c, dateRange):
+def get_range_of_transactions(c, dateRange, customer_info):
     split_date = dateRange.split(",")
-    c.execute(r"SELECT * FROM transactions WHERE order_date BETWEEN DATE(?) AND DATE(?)", [split_date[0], split_date[1]])
+    c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?) OR customer_name=? AND order_date BETWEEN DATE(?) AND DATE(?)", [customer_info, customer_info, split_date[0], split_date[1]])
     return c.fetchall()
 
 
@@ -46,9 +46,6 @@ def write_to_csv(rows, output):
             row_list[2] = whole_price
             csvWriter.writerow(row_list)
 
-
-
-
 def main():
 
     # create the parser argument
@@ -59,15 +56,12 @@ def main():
 
     # parser argument
     group.add_argument("-n", "--name", type=str, help="Filters transactions based on date")
-
     group.add_argument("-i", "--id", type=int, help="Filters transactions based customer id")
 
     req_group.add_argument("-d", "--date", type=str, help="Filters transactions based on order date")
-
     req_group.add_argument("-r", "--daterange", type=str, help="Querys a range of transactions based off of order date")
 
     parser.add_argument("-o", "--output", type=str, default='results.csv', help="Changes the default file name to desired file name")
-
     parser.add_argument("-f", "--filename", type=str, help="Opens selected database file", required=True)
 
 
@@ -83,9 +77,10 @@ def main():
         output_data = get_transaction_by_customer_id(c, args.id)
     if args.date:
         output_data = get_transaction_by_date(c, args.date)
-    if args.daterange:
-        output_data = get_range_of_transactions(c, args.daterange)
-        
+    if args.daterange and args.name:
+        output_data = get_range_of_transactions(c, args.daterange, args.name)
+    if args.daterange and args.id:
+        output_data = get_range_of_transactions(c, args.daterange, args.id)
 
     write_to_csv(output_data, args.output)
     conn.close()
