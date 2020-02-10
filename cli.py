@@ -4,39 +4,36 @@ import sqlite3 as db
 import csv
 
 
-# filters all transactions based on customer id
-def get_transaction_by_customer_id(c, id):
-    c.execute(r"SELECT * FROM transactions WHERE customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)", [id])
-    return c.fetchall()
 
+def query_data(c, dateRange=None, customer_name=None, customer_id=None, customer_date=None):
 
+    # stuck on customer id
+    if customer_id is not None:
+        query_where = 'order_date=DATE(?)'
+        query_args = [customer_date]
+        query_where = f'{query_where} AND customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)'
+        query_args.append(customer_id)
 
-# shows all transactions filtered by customer name
-def get_transactions_by_name(c, name):
-    c.execute(r"SELECT * FROM transactions WHERE customer_name=?", [name])
-    return c.fetchall()
-
-
-
-# shows all transactions filted by date
-def get_transaction_by_date(c, date):
-    c.execute(r"SELECT * FROM transactions WHERE order_date=DATE(?)", [date])
-    return c.fetchall()
-
-# gives a range of order dates
-def get_range_of_transactions(c, dateRange, customer_name=None, customer_id=None):
-    split_date = dateRange.split(",")
-
-    query_where = 'order_date BETWEEN DATE(?) AND DATE(?)'
-    query_args = [split_date[0], split_date[1]]
-
-    if customer_name is not None:
+    if customer_date is not None:
+        query_where = 'order_date=DATE(?)'
+        query_args = [customer_date]
         query_where = f'{query_where} AND customer_name=?'
         query_args.append(customer_name)
 
-    if customer_id is not None:
+    if customer_name and dateRange is not None:
+        split_date = dateRange.split(",")
+        query_where = 'order_date BETWEEN DATE(?) AND DATE(?)'
+        query_args = [split_date[0], split_date[1]]
+        query_where = f'{query_where} AND customer_name=?'
+        query_args.append(customer_name)
+
+    if customer_id and dateRange is not None:
+        split_date = dateRange.split(",")
+        query_where = 'order_date BETWEEN DATE(?) AND DATE(?)'
+        query_args = [split_date[0], split_date[1]]
         query_where = f'{query_where} AND customer_name=(SELECT customer_name FROM customers WHERE customer_id=?)'
         query_args.append(customer_id)
+
 
     query_string = f"SELECT * FROM transactions WHERE {query_where}"
     c.execute(query_string, query_args)
@@ -57,8 +54,8 @@ def write_to_csv(rows, output):
             row_list[2] = whole_price
             csvWriter.writerow(row_list)
 
-def main():
 
+if __name__ == "__main__":
     # create the parser argument
     parser = argparse.ArgumentParser(description="Transaction manager")
     group = parser.add_mutually_exclusive_group()
@@ -82,22 +79,21 @@ def main():
     c = conn.cursor()
 
     output_data = None
-    if args.name:
-        output_data = get_transactions_by_name(c, args.name)
-    if args.id:
-        output_data = get_transaction_by_customer_id(c, args.id)
-    if args.date:
-        output_data = get_transaction_by_date(c, args.date)
+
+    if args.id and args.date:
+        output_data = query_data(c, customer_id=args.id, customer_date=args.date)
+
+
+    if args.name and args.date:
+        output_data = query_data(c, customer_name=args.name, customer_date=args.date)
+
+
     if args.daterange and args.name:
-        output_data = get_range_of_transactions(c, args.daterange, customer_name=args.name)
+        output_data = query_data(c, args.daterange, customer_name=args.name)
     if args.daterange and args.id:
-        output_data = get_range_of_transactions(c, args.daterange, customer_id=args.id)
+        output_data = query_data(c, args.daterange, customer_id=args.id)
     if args.daterange and not args.id and not args.name:
-        output_data = get_range_of_transactions(c, args.daterange)
+        output_data = query_data(c, args.daterange)
 
     write_to_csv(output_data, args.output)
     conn.close()
-
-
-if __name__ == "__main__":
-    main()
